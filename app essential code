@@ -1,0 +1,1082 @@
+import React, { useState, useEffect } from 'react';
+import { Heart, Sparkles, Moon, Sun, Cloud, Waves, Music, Mic, Smile, Frown, Meh, Volume2, Wind, Flame, Circle, Send, Play, Pause, BarChart3, Calendar, TrendingUp, Award, Book, Users, MessageCircle, Home, User, Settings, ChevronRight, ChevronLeft, X } from 'lucide-react';
+
+const VibeCheckApp = () => {
+  const [currentScreen, setCurrentScreen] = useState('welcome');
+  const [userName, setUserName] = useState('');
+  const [userVibe, setUserVibe] = useState(null);
+  const [calmZone, setCalmZone] = useState({
+    visual: null,
+    sound: null,
+    color: null,
+    breathing: null
+  });
+  const [discoveryStep, setDiscoveryStep] = useState(0);
+  const [energyLevel, setEnergyLevel] = useState(50);
+  const [desiredEnergy, setDesiredEnergy] = useState(70);
+  const [journalEntries, setJournalEntries] = useState([]);
+  const [currentJournal, setCurrentJournal] = useState('');
+  const [selectedEmojis, setSelectedEmojis] = useState([]);
+  const [voiceRecording, setVoiceRecording] = useState(false);
+  const [moodHistory, setMoodHistory] = useState([
+    { date: '2024-11-24', mood: 'calm', energy: 65, note: 'feeling good' },
+    { date: '2024-11-25', mood: 'anxious', energy: 40, note: 'work stress' },
+    { date: '2024-11-26', mood: 'happy', energy: 80, note: 'good day with friends' },
+    { date: '2024-11-27', mood: 'tired', energy: 35, note: 'needed rest' },
+    { date: '2024-11-28', mood: 'peaceful', energy: 70, note: 'meditation helped' }
+  ]);
+  const [breathingActive, setBreathingActive] = useState(false);
+  const [breathCount, setBreathCount] = useState(0);
+  const [breathPhase, setBreathPhase] = useState('inhale');
+  const [showPanicButton, setShowPanicButton] = useState(true);
+  const [affirmationIndex, setAffirmationIndex] = useState(0);
+  const [playingSound, setPlayingSound] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [currentCalmTool, setCurrentCalmTool] = useState(null);
+
+  // Calm visuals for discovery
+  const calmVisuals = [
+    { id: 'forest', name: 'Msitu wa Amani', nameEn: 'Peaceful Forest', icon: '🌲', color: 'from-green-600 to-green-800', description: 'Miti mikubwa, hewa safi' },
+    { id: 'ocean', name: 'Bahari Tulivu', nameEn: 'Calm Ocean', icon: '🌊', color: 'from-blue-500 to-blue-700', description: 'Mawimbi ya utulivu' },
+    { id: 'night', name: 'Usiku wa Nyota', nameEn: 'Starry Night', icon: '✨', color: 'from-indigo-900 to-purple-900', description: 'Nyota na utulivu' },
+    { id: 'sunrise', name: 'Alfajiri', nameEn: 'Sunrise', icon: '🌅', color: 'from-orange-400 to-pink-500', description: 'Mwanzo mpya' }
+  ];
+
+  // Calming sounds
+  const calmSounds = [
+    { id: 'rain', name: 'Mvua', nameEn: 'Rain', icon: '🌧️', description: 'Sauti ya mvua ikianguka' },
+    { id: 'fire', name: 'Moto', nameEn: 'Fire Crackling', icon: '🔥', description: 'Moto ukiwaka pole pole' },
+    { id: 'waves', name: 'Mawimbi', nameEn: 'Ocean Waves', icon: '🌊', description: 'Wimbi likipiga pwani' },
+    { id: 'birds', name: 'Ndege', nameEn: 'Birds Singing', icon: '🐦', description: 'Ndege wakiimba asubuhi' }
+  ];
+
+  // Calming colors
+  const calmColors = [
+    { id: 'blue', name: 'Bluu ya Utulivu', hex: '#60A5FA', description: 'Kama anga la asubuhi' },
+    { id: 'green', name: 'Kijani cha Amani', hex: '#34D399', description: 'Kama majani ya mti' },
+    { id: 'purple', name: 'Zambarau ya Utulivu', hex: '#A78BFA', description: 'Kama maua ya jioni' },
+    { id: 'pink', name: 'Waridi wa Upendo', hex: '#F472B6', description: 'Kama mchana wa furaha' }
+  ];
+
+  // Breathing styles
+  const breathingStyles = [
+    { id: '478', name: '4-7-8 Pumzi', pattern: [4, 7, 8], description: 'Pumua 4, shikilia 7, toa 8' },
+    { id: 'box', name: 'Box Breathing', pattern: [4, 4, 4, 4], description: 'Pumua 4, shikilia 4, toa 4, subiri 4' },
+    { id: 'calm', name: 'Pumzi ya Utulivu', pattern: [5, 5], description: 'Pumua pole 5, toa pole 5' }
+  ];
+
+  // Mood emojis
+  const moodEmojis = [
+    { emoji: '😊', name: 'furaha', color: 'text-yellow-400' },
+    { emoji: '😌', name: 'tulivu', color: 'text-blue-400' },
+    { emoji: '😔', name: 'huzuni', color: 'text-gray-400' },
+    { emoji: '😰', name: 'wasiwasi', color: 'text-orange-400' },
+    { emoji: '😤', name: 'hasira', color: 'text-red-400' },
+    { emoji: '😴', name: 'uchovu', color: 'text-purple-400' },
+    { emoji: '🤗', name: 'upendo', color: 'text-pink-400' },
+    { emoji: '😶', name: 'neutral', color: 'text-gray-300' }
+  ];
+
+  // Affirmations in Swahili & English
+  const affirmations = [
+    { sw: 'Uko sawa tu. Pole pole.', en: 'You are okay. Take it easy.' },
+    { sw: 'Tulia kidogo. Kila kitu kitakuwa sawa.', en: 'Calm down a bit. Everything will be okay.' },
+    { sw: 'Una nguvu zaidi ya unavyodhani.', en: 'You are stronger than you think.' },
+    { sw: 'Sema moyo wako. Ni sawa.', en: 'Speak your heart. It\'s okay.' },
+    { sw: 'Hii pia itapita.', en: 'This too shall pass.' },
+    { sw: 'Wewe ni muhimu. Wewe ni wa thamani.', en: 'You matter. You are valuable.' },
+    { sw: 'Leo ni siku mpya. Nafasi mpya.', en: 'Today is a new day. A new chance.' },
+    { sw: 'Pumua. Upo hapa. Uko salama.', en: 'Breathe. You are here. You are safe.' }
+  ];
+
+  // Panic rescue tools
+  const panicTools = [
+    { id: 'breath', name: '60-Second Breath', icon: Wind, color: 'bg-blue-500' },
+    { id: 'ground', name: '5-4-3-2-1 Grounding', icon: Circle, color: 'bg-green-500' },
+    { id: 'tap', name: 'Calm Taps', icon: Heart, color: 'bg-pink-500' },
+    { id: 'affirmation', name: 'Quick Affirmation', icon: Sparkles, color: 'bg-purple-500' }
+  ];
+
+  // Breathing animation effect
+  useEffect(() => {
+    if (breathingActive) {
+      const timer = setTimeout(() => {
+        if (breathPhase === 'inhale') {
+          setBreathPhase('hold');
+        } else if (breathPhase === 'hold') {
+          setBreathPhase('exhale');
+        } else {
+          setBreathPhase('inhale');
+          setBreathCount(prev => prev + 1);
+        }
+      }, breathPhase === 'inhale' ? 4000 : breathPhase === 'hold' ? 7000 : 8000);
+      return () => clearTimeout(timer);
+    }
+  }, [breathingActive, breathPhase]);
+
+  // AI Chat responses
+  const getAIResponse = (message) => {
+    const lowerMsg = message.toLowerCase();
+    
+    if (lowerMsg.includes('sad') || lowerMsg.includes('huzuni') || lowerMsg.includes('down')) {
+      return `Pole sana bestie 💙 It's okay to feel this way. You're not alone. Want to try a calming breath with me? Or maybe journal what's on your mind?`;
+    } else if (lowerMsg.includes('anxious') || lowerMsg.includes('wasiwasi') || lowerMsg.includes('worried')) {
+      return `I hear you. Anxiety can be tough. Let's ground ourselves - can you name 3 things you can see right now? 🌿`;
+    } else if (lowerMsg.includes('happy') || lowerMsg.includes('good') || lowerMsg.includes('great')) {
+      return `Yaaas! 🎉 Love this energy! What made today special? Let's celebrate the good vibes!`;
+    } else if (lowerMsg.includes('tired') || lowerMsg.includes('exhausted') || lowerMsg.includes('uchovu')) {
+      return `Rest is not weakness, it's wisdom 💜 Your body is telling you something. Can you take 10 minutes just for you?`;
+    } else {
+      return `Thank you for sharing that with me. I'm here, listening. Tell me more if you want, or we can just sit here together. Uko sawa tu 💚`;
+    }
+  };
+
+  const sendChatMessage = () => {
+    if (!chatInput.trim()) return;
+    
+    const userMsg = { sender: 'user', text: chatInput, time: new Date() };
+    setChatMessages(prev => [...prev, userMsg]);
+    
+    setTimeout(() => {
+      const botResponse = { sender: 'bot', text: getAIResponse(chatInput), time: new Date() };
+      setChatMessages(prev => [...prev, botResponse]);
+    }, 1000);
+    
+    setChatInput('');
+  };
+
+  const saveJournalEntry = () => {
+    if (!currentJournal.trim() && selectedEmojis.length === 0) return;
+    
+    const entry = {
+      id: Date.now(),
+      text: currentJournal,
+      emojis: selectedEmojis,
+      mood: moodEmojis.find(m => selectedEmojis.includes(m.emoji))?.name || 'mixed',
+      date: new Date(),
+      energy: energyLevel
+    };
+    
+    setJournalEntries(prev => [entry, ...prev]);
+    setCurrentJournal('');
+    setSelectedEmojis([]);
+    alert('✨ Entry saved! Asante for sharing your heart.');
+  };
+
+  const toggleEmoji = (emoji) => {
+    setSelectedEmojis(prev => 
+      prev.includes(emoji) ? prev.filter(e => e !== emoji) : [...prev, emoji]
+    );
+  };
+
+  const startPanicRescue = (toolId) => {
+    setCurrentCalmTool(toolId);
+    if (toolId === 'breath') {
+      setBreathingActive(true);
+      setBreathCount(0);
+      setTimeout(() => {
+        setBreathingActive(false);
+        setCurrentCalmTool(null);
+        alert('💙 You did it! Feeling a bit better?');
+      }, 60000);
+    } else if (toolId === 'affirmation') {
+      setAffirmationIndex(Math.floor(Math.random() * affirmations.length));
+      setTimeout(() => setCurrentCalmTool(null), 5000);
+    } else if (toolId === 'ground') {
+      setTimeout(() => {
+        setCurrentCalmTool(null);
+        alert('🌿 Grounded! You\'re here. You\'re safe. Uko sawa.');
+      }, 30000);
+    }
+  };
+
+  // Welcome Screen
+  if (currentScreen === 'welcome') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center text-white space-y-6 animate-fade-in">
+          <div className="text-6xl mb-4 animate-bounce">✨</div>
+          <h1 className="text-5xl font-bold mb-2">VibeCheck</h1>
+          <p className="text-xl opacity-90">Your safe space. Your vibe. Your pace.</p>
+          <p className="text-sm opacity-80 italic">Sema moyo. Tulia. Uko sawa tu.</p>
+          
+          <div className="space-y-4 mt-8">
+            <input
+              type="text"
+              placeholder="What should we call you? (optional)"
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              className="w-full px-6 py-3 rounded-full bg-white/20 backdrop-blur border border-white/30 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
+            />
+            
+            <button
+              onClick={() => setCurrentScreen('calmZoneIntro')}
+              className="w-full px-8 py-4 bg-white text-purple-600 rounded-full font-semibold hover:scale-105 transition-transform shadow-lg"
+            >
+              Let's Start 💜
+            </button>
+            
+            <button
+              onClick={() => setCurrentScreen('home')}
+              className="w-full px-8 py-3 bg-white/20 backdrop-blur border border-white/30 text-white rounded-full hover:bg-white/30 transition"
+            >
+              Skip to App
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Calm Zone Discovery Intro
+  if (currentScreen === 'calmZoneIntro') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center text-white space-y-6">
+          <div className="text-6xl mb-4">🧘🏽‍♀️</div>
+          <h2 className="text-3xl font-bold">Let's Find Your Calm Zone</h2>
+          <p className="text-lg opacity-90">
+            Not a test. Not clinical. Just us figuring out what makes YOU feel peaceful.
+          </p>
+          <p className="text-sm opacity-80">
+            Pole pole... we'll explore sounds, colors, and vibes together.
+          </p>
+          
+          <button
+            onClick={() => {
+              setCurrentScreen('calmZoneDiscovery');
+              setDiscoveryStep(0);
+            }}
+            className="mt-8 px-8 py-4 bg-white text-indigo-600 rounded-full font-semibold hover:scale-105 transition-transform shadow-lg"
+          >
+            I'm Ready 🌿
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Calm Zone Discovery Process
+  if (currentScreen === 'calmZoneDiscovery') {
+    if (discoveryStep === 0) {
+      // Visual preference
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center text-white mb-8">
+              <div className="text-4xl mb-4">🎨</div>
+              <h2 className="text-2xl font-bold mb-2">Choose Your Happy Place</h2>
+              <p className="opacity-80">Which scene makes you feel most at peace?</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {calmVisuals.map(visual => (
+                <button
+                  key={visual.id}
+                  onClick={() => {
+                    setCalmZone(prev => ({ ...prev, visual: visual.id }));
+                    setDiscoveryStep(1);
+                  }}
+                  className={`p-8 rounded-3xl bg-gradient-to-br ${visual.color} text-white text-left hover:scale-105 transition-transform shadow-xl`}
+                >
+                  <div className="text-6xl mb-4">{visual.icon}</div>
+                  <h3 className="text-xl font-bold mb-2">{visual.name}</h3>
+                  <p className="text-sm opacity-90">{visual.nameEn}</p>
+                  <p className="text-xs opacity-70 mt-2">{visual.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    } else if (discoveryStep === 1) {
+      // Sound preference
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-900 to-indigo-900 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center text-white mb-8">
+              <div className="text-4xl mb-4">🎵</div>
+              <h2 className="text-2xl font-bold mb-2">What Sounds Soothe You?</h2>
+              <p className="opacity-80">Pick the sound that brings you peace</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {calmSounds.map(sound => (
+                <button
+                  key={sound.id}
+                  onClick={() => {
+                    setCalmZone(prev => ({ ...prev, sound: sound.id }));
+                    setDiscoveryStep(2);
+                  }}
+                  className="p-8 rounded-3xl bg-white/10 backdrop-blur border border-white/20 text-white text-left hover:bg-white/20 transition shadow-xl"
+                >
+                  <div className="text-6xl mb-4">{sound.icon}</div>
+                  <h3 className="text-xl font-bold mb-2">{sound.name}</h3>
+                  <p className="text-sm opacity-90">{sound.nameEn}</p>
+                  <p className="text-xs opacity-70 mt-2">{sound.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    } else if (discoveryStep === 2) {
+      // Color preference
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-purple-900 to-pink-900 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center text-white mb-8">
+              <div className="text-4xl mb-4">🎨</div>
+              <h2 className="text-2xl font-bold mb-2">Your Calm Color</h2>
+              <p className="opacity-80">Which color feels safest to you?</p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {calmColors.map(color => (
+                <button
+                  key={color.id}
+                  onClick={() => {
+                    setCalmZone(prev => ({ ...prev, color: color.id }));
+                    setDiscoveryStep(3);
+                  }}
+                  className="p-8 rounded-3xl text-white text-center hover:scale-105 transition-transform shadow-xl"
+                  style={{ backgroundColor: color.hex }}
+                >
+                  <div className="text-4xl mb-2">●</div>
+                  <h3 className="text-sm font-bold mb-1">{color.name}</h3>
+                  <p className="text-xs opacity-80">{color.description}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    } else if (discoveryStep === 3) {
+      // Energy slider
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-orange-500 to-pink-500 p-4 flex items-center justify-center">
+          <div className="max-w-md w-full text-white space-y-8">
+            <div className="text-center">
+              <div className="text-4xl mb-4">⚡</div>
+              <h2 className="text-2xl font-bold mb-2">How's Your Energy?</h2>
+              <p className="opacity-90">No judgment. Just checking in.</p>
+            </div>
+            
+            <div className="space-y-6 bg-white/10 backdrop-blur rounded-3xl p-8">
+              <div>
+                <label className="block text-sm mb-2 opacity-80">Where is your energy now?</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={energyLevel}
+                  onChange={(e) => setEnergyLevel(parseInt(e.target.value))}
+                  className="w-full h-3 bg-white/20 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #60A5FA 0%, #60A5FA ${energyLevel}%, rgba(255,255,255,0.2) ${energyLevel}%, rgba(255,255,255,0.2) 100%)`
+                  }}
+                />
+                <div className="text-center text-2xl font-bold mt-2">{energyLevel}%</div>
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-2 opacity-80">Where do you want it to be?</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={desiredEnergy}
+                  onChange={(e) => setDesiredEnergy(parseInt(e.target.value))}
+                  className="w-full h-3 bg-white/20 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #34D399 0%, #34D399 ${desiredEnergy}%, rgba(255,255,255,0.2) ${desiredEnergy}%, rgba(255,255,255,0.2) 100%)`
+                  }}
+                />
+                <div className="text-center text-2xl font-bold mt-2">{desiredEnergy}%</div>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setDiscoveryStep(4)}
+              className="w-full px-8 py-4 bg-white text-orange-500 rounded-full font-semibold hover:scale-105 transition-transform shadow-lg"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      );
+    } else if (discoveryStep === 4) {
+      // Breathing style
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-teal-500 to-blue-600 p-4">
+          <div className="max-w-4xl mx-auto">
+            <div className="text-center text-white mb-8">
+              <div className="text-4xl mb-4">🌬️</div>
+              <h2 className="text-2xl font-bold mb-2">Let's Test Your Breath</h2>
+              <p className="opacity-80">Try each style. Which one feels natural?</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {breathingStyles.map(style => (
+                <button
+                  key={style.id}
+                  onClick={() => {
+                    setCalmZone(prev => ({ ...prev, breathing: style.id }));
+                    setCurrentScreen('discoveryComplete');
+                  }}
+                  className="p-8 rounded-3xl bg-white/10 backdrop-blur border border-white/20 text-white text-center hover:bg-white/20 transition shadow-xl"
+                >
+                  <div className="text-4xl mb-4">💨</div>
+                  <h3 className="text-lg font-bold mb-2">{style.name}</h3>
+                  <p className="text-sm opacity-90 mb-4">{style.description}</p>
+                  <div className="text-xs opacity-70">
+                    Pattern: {style.pattern.join('-')} seconds
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      );
+    }
+  }
+
+  // Discovery Complete
+  if (currentScreen === 'discoveryComplete') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center text-white space-y-6">
+          <div className="text-6xl mb-4 animate-bounce">🎉</div>
+          <h2 className="text-3xl font-bold">Your Calm Zone is Ready!</h2>
+          <p className="text-lg opacity-90">
+            We've learned what makes you feel peaceful. This is YOUR space now.
+          </p>
+          
+          <div className="bg-white/10 backdrop-blur rounded-3xl p-6 text-left space-y-3">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{calmVisuals.find(v => v.id === calmZone.visual)?.icon}</span>
+              <span>{calmVisuals.find(v => v.id === calmZone.visual)?.name}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">{calmSounds.find(s => s.id === calmZone.sound)?.icon}</span>
+              <span>{calmSounds.find(s => s.id === calmZone.sound)?.name}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">●</span>
+              <span>{calmColors.find(c => c.id === calmZone.color)?.name}</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">🌬️</span>
+              <span>{breathingStyles.find(b => b.id === calmZone.breathing)?.name}</span>
+            </div>
+          </div>
+          
+          <button
+            onClick={() => setCurrentScreen('home')}
+            className="w-full px-8 py-4 bg-white text-green-600 rounded-full font-semibold hover:scale-105 transition-transform shadow-lg"
+          >
+            Enter VibeCheck 💚
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Main App - Home Screen
+  if (currentScreen === 'home') {
+    const selectedColor = calmColors.find(c => c.id === calmZone.color)?.hex || '#60A5FA';
+    
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+        {/* Header */}
+        <div className="bg-white shadow-sm sticky top-0 z-10">
+          <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="text-2xl">✨</div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-800">VibeCheck</h1>
+                <p className="text-xs text-gray-500">
+                  {userName ? `Karibu ${userName}` : 'Uko sawa tu'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <button className="p-2 hover:bg-gray-100 rounded-full transition">
+                <Bell size={20} className="text-gray-600" />
+              </button>
+              <button 
+                onClick={() => setCurrentScreen('settings')}
+                className="p-2 hover:bg-gray-100 rounded-full transition"
+              >
+                <Settings size={20} className="text-gray-600" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="max-w-6xl mx-auto p-4">
+          {/* Quick Energy Check */}
+          <div className="bg-white rounded-3xl shadow-lg p-6 mb-6" style={{ borderLeft: `6px solid ${selectedColor}` }}>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-gray-800">How's your vibe today?</h2>
+              <Activity className="text-purple-500" size={24} />
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between text-sm mb-2">
+                  <span className="text-gray-600">Current Energy</span>
+                  <span className="font-bold" style={{ color: selectedColor }}>{energyLevel}%</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={energyLevel}
+                  onChange={(e) => setEnergyLevel(parseInt(e.target.value))}
+                  className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, ${selectedColor} 0%, ${selectedColor} ${energyLevel}%, #E5E7EB ${energyLevel}%, #E5E7EB 100%)`
+                  }}
+                />
+              </div>
+              
+              <div className="flex gap-2 flex-wrap">
+                {moodEmojis.map(mood => (
+                  <button
+                    key={mood.emoji}
+                    onClick={() => toggleEmoji(mood.emoji)}
+                    className={`text-3xl p-2 rounded-2xl transition-transform hover:scale-110 ${
+                      selectedEmojis.includes(mood.emoji) ? 'bg-purple-100 scale-110' : 'bg-gray-50'
+                    }`}
+                  >
+                    {mood.emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Panic Rescue Button - Always Visible */}
+          {showPanicButton && (
+            <div className="bg-gradient-to-r from-red-500 to-pink-500 rounded-3xl shadow-lg p-6 mb-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-xl font-bold mb-1">Feeling Overwhelmed?</h3>
+                  <p className="text-sm opacity-90">Quick rescue tools - 10-60 seconds</p>
+                </div>
+                <Heart className="animate-pulse" size={32} />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-3 mt-4">
+                {panicTools.map(tool => (
+                  <button
+                    key={tool.id}
+                    onClick={() => startPanicRescue(tool.id)}
+                    className={`${tool.color} p-4 rounded-2xl text-white font-semibold flex flex-col items-center gap-2 hover:scale-105 transition-transform shadow-md`}
+                  >
+                    <tool.icon size={24} />
+                    <span className="text-xs">{tool.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Main Actions Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {/* AI Friend Chat */}
+            <button
+              onClick={() => setCurrentScreen('chat')}
+              className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl p-8 text-white text-left hover:scale-105 transition-transform shadow-lg"
+            >
+              <MessageCircle size={32} className="mb-3" />
+              <h3 className="text-xl font-bold mb-2">Ongea Nami</h3>
+              <p className="text-sm opacity-90">Your AI friend is here to listen</p>
+            </button>
+
+            {/* Journal */}
+            <button
+              onClick={() => setCurrentScreen('journal')}
+              className="bg-gradient-to-br from-blue-500 to-teal-500 rounded-3xl p-8 text-white text-left hover:scale-105 transition-transform shadow-lg"
+            >
+              <Book size={32} className="mb-3" />
+              <h3 className="text-xl font-bold mb-2">Sema Moyo</h3>
+              <p className="text-sm opacity-90">Journal your thoughts safely</p>
+            </button>
+
+            {/* Calm Tools */}
+            <button
+              onClick={() => setCurrentScreen('calmTools')}
+              className="bg-gradient-to-br from-green-500 to-emerald-500 rounded-3xl p-8 text-white text-left hover:scale-105 transition-transform shadow-lg"
+            >
+              <Sparkles size={32} className="mb-3" />
+              <h3 className="text-xl font-bold mb-2">Calm Zone</h3>
+              <p className="text-sm opacity-90">Breathing, meditation & more</p>
+            </button>
+
+            {/* Mood Dashboard */}
+            <button
+              onClick={() => setCurrentScreen('dashboard')}
+              className="bg-gradient-to-br from-orange-500 to-red-500 rounded-3xl p-8 text-white text-left hover:scale-105 transition-transform shadow-lg"
+            >
+              <BarChart3 size={32} className="mb-3" />
+              <h3 className="text-xl font-bold mb-2">Your Journey</h3>
+              <p className="text-sm opacity-90">See your emotional patterns</p>
+            </button>
+          </div>
+
+          {/* Daily Affirmation */}
+          <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-3xl p-6 text-white text-center shadow-lg">
+            <div className="text-2xl mb-3">💛</div>
+            <p className="text-lg font-semibold mb-1">{affirmations[affirmationIndex].sw}</p>
+            <p className="text-sm opacity-90">{affirmations[affirmationIndex].en}</p>
+            <button
+              onClick={() => setAffirmationIndex((affirmationIndex + 1) % affirmations.length)}
+              className="mt-4 px-6 py-2 bg-white/20 backdrop-blur rounded-full text-sm hover:bg-white/30 transition"
+            >
+              Another One ✨
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg">
+          <div className="max-w-6xl mx-auto px-4 py-3 flex justify-around">
+            <button onClick={() => setCurrentScreen('home')} className="flex flex-col items-center gap-1 text-purple-600">
+              <Home size={24} />
+              <span className="text-xs font-medium">Home</span>
+            </button>
+            <button onClick={() => setCurrentScreen('journal')} className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-600">
+              <Book size={24} />
+              <span className="text-xs">Journal</span>
+            </button>
+            <button onClick={() => setCurrentScreen('chat')} className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-600">
+              <MessageCircle size={24} />
+              <span className="text-xs">Chat</span>
+            </button>
+            <button onClick={() => setCurrentScreen('dashboard')} className="flex flex-col items-center gap-1 text-gray-400 hover:text-gray-600">
+              <BarChart3 size={24} />
+              <span className="text-xs">Insights</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // AI Chat Screen
+  if (currentScreen === 'chat') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 pb-24">
+        <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 sticky top-0 z-10 shadow-lg">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <button onClick={() => setCurrentScreen('home')} className="p-2 hover:bg-white/10 rounded-full">
+              <ChevronLeft size={24} />
+            </button>
+            <div className="text-center">
+              <h2 className="text-xl font-bold">Ongea Nami AI</h2>
+              <p className="text-xs opacity-80">Your safe space. Zero judgment.</p>
+            </div>
+            <div className="w-10"></div>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto p-4 space-y-4">
+          {chatMessages.map((msg, idx) => (
+            <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`max-w-[80%] p-4 rounded-3xl ${
+                msg.sender === 'user' 
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white' 
+                  : 'bg-white shadow-md text-gray-800'
+              }`}>
+                <p className="text-sm">{msg.text}</p>
+                <p className="text-xs opacity-60 mt-1">
+                  {msg.time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4">
+          <div className="max-w-4xl mx-auto flex gap-2">
+            <input
+              type="text"
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && sendChatMessage()}
+              placeholder="Sema moyo wako... type anything"
+              className="flex-1 px-6 py-3 bg-gray-100 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500"
+            />
+            <button
+              onClick={sendChatMessage}
+              className="p-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full hover:scale-105 transition-transform shadow-lg"
+            >
+              <Send size={24} />
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Journal Screen
+  if (currentScreen === 'journal') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-teal-50 pb-24">
+        <div className="bg-gradient-to-r from-blue-600 to-teal-600 text-white p-4 sticky top-0 z-10 shadow-lg">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <button onClick={() => setCurrentScreen('home')} className="p-2 hover:bg-white/10 rounded-full">
+              <ChevronLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold">Sema Moyo</h2>
+            <button onClick={saveJournalEntry} className="px-4 py-2 bg-white/20 rounded-full text-sm hover:bg-white/30">
+              Save
+            </button>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto p-4 space-y-6">
+          {/* Emoji Selector */}
+          <div className="bg-white rounded-3xl p-6 shadow-lg">
+            <h3 className="font-semibold text-gray-800 mb-3">How are you feeling?</h3>
+            <div className="flex gap-3 flex-wrap">
+              {moodEmojis.map(mood => (
+                <button
+                  key={mood.emoji}
+                  onClick={() => toggleEmoji(mood.emoji)}
+                  className={`text-4xl p-3 rounded-2xl transition-all ${
+                    selectedEmojis.includes(mood.emoji) 
+                      ? 'bg-blue-100 scale-110 shadow-md' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                >
+                  {mood.emoji}
+                </button>
+              ))}
+            </div>
+            {selectedEmojis.length > 0 && (
+              <div className="mt-3 text-sm text-gray-600">
+                Selected: {selectedEmojis.join(' ')}
+              </div>
+            )}
+          </div>
+
+          {/* Free Journal */}
+          <div className="bg-white rounded-3xl p-6 shadow-lg">
+            <h3 className="font-semibold text-gray-800 mb-3">Just say it. No judgment here.</h3>
+            <textarea
+              value={currentJournal}
+              onChange={(e) => setCurrentJournal(e.target.value)}
+              placeholder="Andika... write anything on your mind. It's safe here. 💚"
+              className="w-full h-64 p-4 bg-gray-50 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            />
+            
+            {/* Voice Note Option */}
+            <div className="mt-4 flex gap-3">
+              <button
+                onClick={() => setVoiceRecording(!voiceRecording)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-full transition-all ${
+                  voiceRecording 
+                    ? 'bg-red-500 text-white animate-pulse' 
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <Mic size={20} />
+                <span className="text-sm font-medium">
+                  {voiceRecording ? 'Recording...' : 'Voice Note'}
+                </span>
+              </button>
+              
+              <button
+                onClick={saveJournalEntry}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-teal-600 text-white rounded-full font-semibold hover:scale-105 transition-transform shadow-lg"
+              >
+                Save Entry ✨
+              </button>
+            </div>
+          </div>
+
+          {/* Past Entries */}
+          {journalEntries.length > 0 && (
+            <div className="space-y-3">
+              <h3 className="font-semibold text-gray-800">Your Journey</h3>
+              {journalEntries.map(entry => (
+                <div key={entry.id} className="bg-white rounded-2xl p-4 shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex gap-2">
+                      {entry.emojis.map((emoji, idx) => (
+                        <span key={idx} className="text-2xl">{emoji}</span>
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {new Date(entry.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-700">{entry.text}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Calm Tools Screen
+  if (currentScreen === 'calmTools') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 pb-24">
+        <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-4 sticky top-0 z-10 shadow-lg">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <button onClick={() => setCurrentScreen('home')} className="p-2 hover:bg-white/10 rounded-full">
+              <ChevronLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold">Calm Zone</h2>
+            <div className="w-10"></div>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto p-4 space-y-6">
+          {/* Breathing Exercise */}
+          <div className="bg-white rounded-3xl p-8 shadow-lg text-center">
+            <h3 className="text-2xl font-bold text-gray-800 mb-2">Pumzi ya Utulivu</h3>
+            <p className="text-sm text-gray-600 mb-6">4-7-8 Breathing</p>
+            
+            {!breathingActive ? (
+              <button
+                onClick={() => {
+                  setBreathingActive(true);
+                  setBreathCount(0);
+                  setBreathPhase('inhale');
+                }}
+                className="px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-full font-semibold hover:scale-105 transition-transform shadow-lg"
+              >
+                Start Breathing 🌬️
+              </button>
+            ) : (
+              <div className="space-y-6">
+                <div 
+                  className={`w-32 h-32 mx-auto rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center transition-all duration-1000 ${
+                    breathPhase === 'inhale' ? 'scale-125' : breathPhase === 'hold' ? 'scale-125' : 'scale-75'
+                  }`}
+                >
+                  <span className="text-white text-2xl font-bold">
+                    {breathPhase === 'inhale' ? 'Inhale' : breathPhase === 'hold' ? 'Hold' : 'Exhale'}
+                  </span>
+                </div>
+                
+                <p className="text-lg text-gray-700">
+                  {breathPhase === 'inhale' && 'Pumua pole... breathe in slowly'}
+                  {breathPhase === 'hold' && 'Shikilia... hold it gently'}
+                  {breathPhase === 'exhale' && 'Toa hewa... exhale slowly'}
+                </p>
+                
+                <div className="text-sm text-gray-500">Cycles completed: {breathCount}</div>
+                
+                <button
+                  onClick={() => setBreathingActive(false)}
+                  className="px-6 py-2 bg-gray-200 text-gray-700 rounded-full hover:bg-gray-300 transition"
+                >
+                  Stop
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Quick Calming Sounds */}
+          <div className="bg-white rounded-3xl p-6 shadow-lg">
+            <h3 className="text-xl font-bold text-gray-800 mb-4">Calming Sounds</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {calmSounds.map(sound => (
+                <button
+                  key={sound.id}
+                  onClick={() => setPlayingSound(playingSound === sound.id ? null : sound.id)}
+                  className={`p-6 rounded-2xl text-left transition-all ${
+                    playingSound === sound.id 
+                      ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white scale-105 shadow-xl' 
+                      : 'bg-gray-50 hover:bg-gray-100'
+                  }`}
+                >
+                  <div className="text-4xl mb-2">{sound.icon}</div>
+                  <h4 className="font-semibold text-sm">{sound.name}</h4>
+                  <p className="text-xs opacity-70 mt-1">{sound.nameEn}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Grounding Exercise */}
+          <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl p-8 text-white shadow-lg">
+            <h3 className="text-2xl font-bold mb-2">5-4-3-2-1 Grounding</h3>
+            <p className="text-sm opacity-90 mb-6">When you feel disconnected or anxious</p>
+            
+            <div className="space-y-3 text-sm">
+              <p>👁️ Name <strong>5 things</strong> you can see</p>
+              <p>✋ Name <strong>4 things</strong> you can touch</p>
+              <p>👂 Name <strong>3 things</strong> you can hear</p>
+              <p>👃 Name <strong>2 things</strong> you can smell</p>
+              <p>👅 Name <strong>1 thing</strong> you can taste</p>
+            </div>
+            
+            <p className="text-xs opacity-80 mt-6 italic">This brings you back to the present moment. Uko hapa. Uko salama.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Dashboard Screen
+  if (currentScreen === 'dashboard') {
+    const avgEnergy = Math.round(moodHistory.reduce((sum, day) => sum + day.energy, 0) / moodHistory.length);
+    const moodCounts = moodHistory.reduce((acc, day) => {
+      acc[day.mood] = (acc[day.mood] || 0) + 1;
+      return acc;
+    }, {});
+    const dominantMood = Object.entries(moodCounts).sort((a, b) => b[1] - a[1])[0];
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-red-50 pb-24">
+        <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white p-4 sticky top-0 z-10 shadow-lg">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <button onClick={() => setCurrentScreen('home')} className="p-2 hover:bg-white/10 rounded-full">
+              <ChevronLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold">Your Journey</h2>
+            <div className="w-10"></div>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto p-4 space-y-6">
+          {/* Stats Overview */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-3xl p-6 shadow-lg text-center">
+              <TrendingUp className="mx-auto mb-2 text-orange-500" size={32} />
+              <div className="text-3xl font-bold text-gray-800">{avgEnergy}%</div>
+              <p className="text-sm text-gray-600 mt-1">Avg Energy</p>
+            </div>
+            
+            <div className="bg-white rounded-3xl p-6 shadow-lg text-center">
+              <Heart className="mx-auto mb-2 text-pink-500" size={32} />
+              <div className="text-3xl font-bold text-gray-800">{moodHistory.length}</div>
+              <p className="text-sm text-gray-600 mt-1">Days Tracked</p>
+            </div>
+          </div>
+
+          {/* Dominant Mood */}
+          <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl p-6 shadow-lg text-white">
+            <h3 className="text-lg font-bold mb-2">Your Vibe This Week</h3>
+            <div className="flex items-center gap-3">
+              <span className="text-5xl">{moodEmojis.find(m => m.name === dominantMood[0])?.emoji}</span>
+              <div>
+                <p className="text-2xl font-bold capitalize">{dominantMood[0]}</p>
+                <p className="text-sm opacity-80">{dominantMood[1]} days</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Mood History */}
+          <div className="bg-white rounded-3xl p-6 shadow-lg">
+            <h3 className="text-lg font-bold text-gray-800 mb-4">Recent Check-ins</h3>
+            <div className="space-y-3">
+              {moodHistory.slice().reverse().map((day, idx) => (
+                <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
+                  <div className="flex items-center gap-3">
+                    <span className="text-3xl">{moodEmojis.find(m => m.name === day.mood)?.emoji}</span>
+                    <div>
+                      <p className="font-semibold text-gray-800 capitalize">{day.mood}</p>
+                      <p className="text-xs text-gray-500">{day.note}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold text-gray-800">{day.energy}%</p>
+                    <p className="text-xs text-gray-500">{new Date(day.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Insights */}
+          <div className="bg-gradient-to-br from-blue-500 to-teal-500 rounded-3xl p-6 shadow-lg text-white">
+            <h3 className="text-lg font-bold mb-3">💡 Insight</h3>
+            <p className="text-sm opacity-90">
+              {avgEnergy > 70 
+                ? "Your energy has been strong! Keep doing what you're doing. 🌟"
+                : avgEnergy > 50
+                ? "You're doing okay. Remember to take breaks and practice self-care. 💚"
+                : "It's been tough lately. Be gentle with yourself. Consider reaching out for support. 💙"}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Settings Screen
+  if (currentScreen === 'settings') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pb-24">
+        <div className="bg-gradient-to-r from-gray-800 to-gray-900 text-white p-4 sticky top-0 z-10 shadow-lg">
+          <div className="max-w-4xl mx-auto flex items-center justify-between">
+            <button onClick={() => setCurrentScreen('home')} className="p-2 hover:bg-white/10 rounded-full">
+              <ChevronLeft size={24} />
+            </button>
+            <h2 className="text-xl font-bold">Settings</h2>
+            <div className="w-10"></div>
+          </div>
+        </div>
+
+        <div className="max-w-4xl mx-auto p-4 space-y-4">
+          <div className="bg-white rounded-3xl p-6 shadow-lg">
+            <h3 className="font-bold text-gray-800 mb-4">Crisis Resources</h3>
+            <div className="space-y-3">
+              <a href="tel:1199" className="flex items-center gap-3 p-4 bg-red-50 rounded-2xl hover:bg-red-100 transition">
+                <Phone className="text-red-600" size={24} />
+                <div>
+                  <p className="font-semibold text-gray-800">Kenya Suicide Hotline</p>
+                  <p className="text-sm text-gray-600">1199 (toll-free)</p>
+                </div>
+              </a>
+              
+              <a href="tel:0800720720" className="flex items-center gap-3 p-4 bg-blue-50 rounded-2xl hover:bg-blue-100 transition">
+                <Phone className="text-blue-600" size={24} />
+                <div>
+                  <p className="font-semibold text-gray-800">Kenya Red Cross</p>
+                  <p className="text-sm text-gray-600">0800 720 720</p>
+                </div>
+              </a>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-3xl p-6 shadow-lg">
+            <h3 className="font-bold text-gray-800 mb-4">About VibeCheck</h3>
+            <p className="text-sm text-gray-600 mb-3">
+              VibeCheck is your safe, judgment-free space for mental wellness. We're here to support you, not diagnose you.
+            </p>
+            <p className="text-xs text-gray-500 italic">
+              If you're experiencing a mental health crisis, please reach out to a professional or call the hotlines above.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              setCurrentScreen('welcome');
+              setCalmZone({ visual: null, sound: null, color: null, breathing: null });
+            }}
+            className="w-full p-4 bg-purple-100 text-purple-700 rounded-2xl font-semibold hover:bg-purple-200 transition"
+          >
+            Retake Calm Zone Discovery
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
+
+export default VibeCheckApp;
